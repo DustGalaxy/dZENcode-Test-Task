@@ -2,5 +2,5 @@ from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r"ws/comments/(?P<comment_name>\w+)/$", consumers.ReplyConsumer.as_asgi()),
+    re_path(r"ws/comments/(?P<comment_name>\d+)/$", consumers.ReplyConsumer.as_asgi()),
 ]

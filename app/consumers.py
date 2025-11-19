@@ -1,34 +1,30 @@
-from channels.generic.websocket import AsyncWebsocketConsumer
 import json
+
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class ReplyConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.coment_id = self.scope["url_route"]["kwargs"]["comment_name"]
-        self.comment_name = f"comment_{self.coment_id}"
+        # Проверка аутентификации
+        user = self.scope.get("user")
+        if not user or user.is_anonymous:
+            await self.close(code=401)  # Unauthorized
+            return
 
-        # Присоединяемся к группе
+        self.comment_id = self.scope["url_route"]["kwargs"]["comment_name"]
+        self.comment_name = f"comment_{self.comment_id}"
+
         await self.channel_layer.group_add(self.comment_name, self.channel_name)
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Покидаем группу
         await self.channel_layer.group_discard(self.comment_name, self.channel_name)
 
-    # Получаем сообщение от WebSocket
-    async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json["message"]
+    async def new_reply(self, event):
+        """
+        Отправляет новый ответ всем подключенным клиентам
+        """
+        reply_data = event["reply"]
 
-        # Отправляем сообщение в группу
-        await self.channel_layer.group_send(
-            self.comment_name, {"type": "comment_message", "message": message}
-        )
-
-    # Получаем сообщение от группы
-    async def chat_message(self, event):
-        message = event["message"]
-
-        # Отправляем сообщение обратно клиенту
-        await self.send(text_data=json.dumps({"message": message}))
+        await self.send(text_data=json.dumps({"type": "new_reply", "data": reply_data}))
