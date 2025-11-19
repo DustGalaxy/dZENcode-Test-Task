@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     CommentListCreateAPIView,
     CommentDetailAPIView,
-    CommentRepliesAPIView,
+    # CommentRepliesAPIView,
 )
 
 app_name = "app"
@@ -13,9 +13,9 @@ urlpatterns = [
     # Retrieve, update, or delete a specific comment
     path("comments/<int:pk>/", CommentDetailAPIView.as_view(), name="comment-detail"),
     # List all replies to a specific comment
-    path(
-        "comments/<int:pk>/replies/",
-        CommentRepliesAPIView.as_view(),
-        name="comment-replies",
-    ),
+    # path(
+    #     "comments/<int:pk>/replies/",
+    #     CommentRepliesAPIView.as_view(),
+    #     name="comment-replies",
+    # ),
 ]

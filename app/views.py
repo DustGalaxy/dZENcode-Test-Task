@@ -1,4 +1,6 @@
 from rest_framework import generics, permissions
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from .models import Comment
 from .serializers import CommentSerializer, CommentCreateSerializer
 
@@ -11,6 +13,7 @@ class CommentListCreateAPIView(generics.ListCreateAPIView):
     """
 
     queryset = Comment.objects.filter(reply__isnull=True).order_by("-created_at")
+    authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
@@ -28,23 +31,10 @@ class CommentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     """
 
     queryset = Comment.objects.all()
+    authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH", "POST"]:
             return CommentCreateSerializer
         return CommentSerializer
-
-
-class CommentRepliesAPIView(generics.ListAPIView):
-    """
-    API view to list all replies to a specific comment.
-    GET: Returns all replies for a given comment ID
-    """
-
-    serializer_class = CommentSerializer
-    permission_classes = [permissions.AllowAny]
-
-    def get_queryset(self):
-        comment_id = self.kwargs.get("pk")
-        return Comment.objects.filter(reply=comment_id).order_by("-created_at")
