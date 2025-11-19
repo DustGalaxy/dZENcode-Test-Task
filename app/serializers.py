@@ -55,6 +55,3 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         validated_data["user"] = user
         return super().create(validated_data)
-
-    def to_representation(self, instance) -> dict:
-        return dict(CommentSerializer(instance, context=self.context).data)
