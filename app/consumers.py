@@ -5,10 +5,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class ReplyConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Проверка аутентификации
-        user = self.scope.get("user")
-        if not user or user.is_anonymous:
-            await self.close(code=401)  # Unauthorized
+        if not self.scope.get("user"):
+            await self.close(code=4001)  # Unauthorized
             return
 
         self.comment_id = self.scope["url_route"]["kwargs"]["comment_name"]

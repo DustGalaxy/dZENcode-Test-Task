@@ -153,7 +153,6 @@ SIMPLE_JWT = {
 
 ASGI_APPLICATION = "comments_api.asgi.application"
 
-# Channel Layers configuration
 if PRODUCTION:
     CHANNEL_LAYERS = {
         "default": {
@@ -167,3 +166,33 @@ else:
     CHANNEL_LAYERS = {
         "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
     }
+
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Comments API",
+    "DESCRIPTION": """
+## REST API
+Standard REST endpoints for comments management.
+
+## WebSocket API
+Real-time notifications for comment replies.
+
+**Endpoint**: `ws://localhost:8000/ws/comments/<comment_id>/?token=<jwt_token>`
+
+**Authentication**: JWT token via query parameter
+
+**Events**:
+- [new_reply](cci:1://file:///e:/vs-code-projects/dZENcode-Test-Task/app/consumers.py:21:4-27:88): Sent when a new reply is created
+
+**Example**:
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws/comments/1/?token=YOUR_TOKEN');
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === 'new_reply') {
+        console.log('New reply:', data.data);
+    }
+};
+```
+""",
+}
