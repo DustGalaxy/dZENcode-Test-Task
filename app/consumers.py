@@ -4,7 +4,7 @@ import json
 
 class ReplyConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.coment_id = self.scope["url_route"]["kwargs"]["coment_name"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        self.coment_id = self.scope["url_route"]["kwargs"]["comment_name"]
         self.comment_name = f"comment_{self.coment_id}"
 
         # Присоединяемся к группе
@@ -12,17 +12,19 @@ class ReplyConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-    async def disconnect(self, close_code):  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def disconnect(self, close_code):
         # Покидаем группу
         await self.channel_layer.group_discard(self.comment_name, self.channel_name)
 
     # Получаем сообщение от WebSocket
-    async def receive(self, text_data):  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
 
         # Отправляем сообщение в группу
-        await self.channel_layer.group_send(self.comment_name, {"type": "comment_message", "message": message})
+        await self.channel_layer.group_send(
+            self.comment_name, {"type": "comment_message", "message": message}
+        )
 
     # Получаем сообщение от группы
     async def chat_message(self, event):
