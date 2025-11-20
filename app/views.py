@@ -1,4 +1,3 @@
-from django.core.cache import cache
 from rest_framework import generics, permissions
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -55,12 +54,15 @@ class CommentPreviewAPIView(generics.ListAPIView):
     serializer_class = CommentPreviewSerializer
 
     def list(self, request, *args, **kwargs):
+        from django.core.cache import cache
+        from rest_framework.response import Response
+
         cache_key = "comment_preview_list"
 
         cached_data = cache.get(cache_key)
         if cached_data is not None:
-            return cached_data
+            return Response(cached_data)
 
         response = super().list(request, *args, **kwargs)
-        cache.set(cache_key, response, timeout=300)
+        cache.set(cache_key, response.data, timeout=300)
         return response
