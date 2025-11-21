@@ -34,7 +34,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
-    ALLOWED_TAGS = ["a", "code", "i", "strong"]
+    ALLOWED_TAGS = ["a", "code", "i", "strong", "p", "br", "em", "b"]
     ALLOWED_ATTRIBUTES = {"a": ["href", "title"]}
 
     class Meta:

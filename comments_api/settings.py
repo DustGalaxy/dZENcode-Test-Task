@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-#t1gq*@5+l4pi1u8(0$9s-l973hkineghue%5_#*pg)ugze89#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 
 # Application definition
@@ -50,6 +50,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 
 ROOT_URLCONF = "comments_api.urls"
 
@@ -135,6 +136,16 @@ INSTALLED_APPS += [
     "drf_spectacular",
     "django_celery_results",
     "django_celery_beat",
+    "corsheaders",
+]
+
+MIDDLEWARE += [
+    "corsheaders.middleware.CorsMiddleware",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 AUTH_USER_MODEL = "app.User"

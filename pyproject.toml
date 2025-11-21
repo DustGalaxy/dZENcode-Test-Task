@@ -12,6 +12,7 @@ dependencies = [
     "django>=5.2.8",
     "django-celery-beat>=2.8.1",
     "django-celery-results>=2.6.0",
+    "django-cors-headers>=4.9.0",
     "django-redis>=5.4.0",
     "djangorestframework>=3.16.1",
     "djangorestframework-simplejwt>=5.5.1",
@@ -19,5 +20,5 @@ dependencies = [
     "gunicorn>=23.0.0",
     "pyjwt>=2.10.1",
     "python-dotenv>=1.2.1",
-    "uvicorn>=0.38.0",
+    "uvicorn[standard]>=0.38.0",
 ]
