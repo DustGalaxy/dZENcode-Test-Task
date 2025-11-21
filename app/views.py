@@ -1,8 +1,12 @@
 from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from django.core.cache import cache
+
 from .models import Comment
-from .serializers import CommentSerializer, CommentCreateSerializer
+from .serializers import CommentSerializer, CommentCreateSerializer, UserSerializer
 from app.serializers import CommentPreviewSerializer
 
 
@@ -54,9 +58,6 @@ class CommentPreviewAPIView(generics.ListAPIView):
     serializer_class = CommentPreviewSerializer
 
     def list(self, request, *args, **kwargs):
-        from django.core.cache import cache
-        from rest_framework.response import Response
-
         cache_key = "comment_preview_list"
 
         cached_data = cache.get(cache_key)
@@ -66,3 +67,23 @@ class CommentPreviewAPIView(generics.ListAPIView):
         response = super().list(request, *args, **kwargs)
         cache.set(cache_key, response.data, timeout=300)
         return response
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def user_me(request):
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def comment_text_preview(request):
+    serializer = CommentCreateSerializer(
+        data=request.data, context={"request": request}
+    )
+
+    if serializer.is_valid():
+        return Response({"text": serializer.validated_data["text"]})
+
+    return Response(serializer.errors, status=400)
