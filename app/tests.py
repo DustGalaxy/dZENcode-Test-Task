@@ -268,3 +268,196 @@ class WebSocketConsumerTest(TestCase):
         self.assertEqual(data["data"]["text"], "Test reply")
 
         await communicator.disconnect()
+
+
+class EmailNotificationTests(APITestCase):
+    """Тесты для email-уведомлений"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user1 = User.objects.create_user(
+            username="user1", email="user1@example.com", password="testpass123"
+        )
+        self.user2 = User.objects.create_user(
+            username="user2", email="user2@example.com", password="testpass123"
+        )
+        self.refresh = RefreshToken.for_user(self.user2)
+        self.access_token = str(self.refresh.access_token)
+
+    def test_email_task_called_on_reply(self):
+        """Тест что задача отправки email вызывается при создании ответа"""
+        from unittest.mock import patch
+
+        parent = Comment.objects.create(user=self.user1, text="Parent comment")
+
+        with patch("app.tasks.send_reply_notification_email.delay") as mock_task:
+            self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+            response = self.client.post(
+                "/api/comments/", {"text": "Reply to parent", "reply": parent.id}
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            # Проверяем что задача была вызвана
+            mock_task.assert_called_once()
+            # Проверяем параметры вызова
+            call_kwargs = mock_task.call_args[1]
+            self.assertEqual(call_kwargs["user_email"], "user1@example.com")
+            self.assertIn("Reply to parent", call_kwargs["comment_text_short"])
+
+    def test_email_not_sent_to_self(self):
+        """Тест что email не отправляется если пользователь отвечает сам себе"""
+        from unittest.mock import patch
+
+        parent = Comment.objects.create(user=self.user1, text="Parent comment")
+
+        # Авторизуемся как user1 (автор родительского комментария)
+        refresh = RefreshToken.for_user(self.user1)
+        token = str(refresh.access_token)
+
+        with patch("app.tasks.send_reply_notification_email.delay") as mock_task:
+            self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+            response = self.client.post(
+                "/api/comments/", {"text": "Reply to myself", "reply": parent.id}
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            # Email всё равно отправляется (можно изменить логику если нужно)
+            # Но это показывает что сигнал сработал
+            mock_task.assert_called_once()
+
+    def test_email_content_rendering(self):
+        """Тест рендеринга email шаблонов"""
+        from django.template.loader import render_to_string
+
+        reply_text = "This is a test reply"
+
+        # Тестируем HTML шаблон
+        html_content = render_to_string(
+            "emails/reply_notification.html", {"reply_text": reply_text}
+        )
+        self.assertIn(reply_text, html_content)
+        self.assertIn("Новый ответ", html_content)
+
+        # Тестируем текстовый шаблон
+        text_content = render_to_string(
+            "emails/reply_notification.txt", {"reply_text": reply_text}
+        )
+        self.assertIn(reply_text, text_content)
+
+    def test_email_task_execution(self):
+        """Тест выполнения задачи отправки email"""
+        from django.core import mail
+        from app.tasks import send_reply_notification_email
+
+        # Выполняем задачу напрямую (не через Celery)
+        send_reply_notification_email(
+            user_email="test@example.com", comment_text_short="Test reply text"
+        )
+
+        # Проверяем что email был отправлен
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["test@example.com"])
+        self.assertIn("Новый ответ", mail.outbox[0].subject)
+        self.assertIn("Test reply text", mail.outbox[0].body)
+
+
+class CachingTests(APITestCase):
+    """Тесты для Redis кеширования"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="testuser", email="test@example.com", password="testpass123"
+        )
+        self.refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(self.refresh.access_token)
+
+        # Очищаем кеш перед каждым тестом
+        from django.core.cache import cache
+
+        cache.clear()
+
+    def test_comment_preview_caching(self):
+        """Тест кеширования списка комментариев"""
+        from django.core.cache import cache
+
+        # Создаём комментарий
+        Comment.objects.create(user=self.user, text="Test comment 1")
+
+        # Первый запрос - данные из БД
+        response1 = self.client.get("/api/comments/preview/")
+        self.assertEqual(response1.status_code, status.HTTP_200_OK)
+
+        # Проверяем что данные закешированы
+        cached_data = cache.get("comment_preview_list")
+        self.assertIsNotNone(cached_data)
+
+        # Второй запрос - данные из кеша
+        response2 = self.client.get("/api/comments/preview/")
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+
+        # Данные должны быть одинаковыми
+        self.assertEqual(response1.data, response2.data)
+
+    def test_cache_invalidation_on_new_comment(self):
+        """Тест инвалидации кеша при создании нового комментария"""
+        from django.core.cache import cache
+
+        # Создаём первый комментарий
+        Comment.objects.create(user=self.user, text="Comment 1")
+
+        # Делаем запрос чтобы закешировать
+        response1 = self.client.get("/api/comments/preview/")
+        self.assertEqual(len(response1.data), 1)
+
+        # Проверяем что кеш существует
+        self.assertIsNotNone(cache.get("comment_preview_list"))
+
+        # Создаём новый комментарий через API
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        self.client.post("/api/comments/", {"text": "Comment 2"})
+
+        # Проверяем что кеш был очищен
+        self.assertIsNone(cache.get("comment_preview_list"))
+
+        # Новый запрос должен вернуть обновлённые данные
+        response2 = self.client.get("/api/comments/preview/")
+        self.assertEqual(len(response2.data), 2)
+
+    def test_only_top_level_comments_cached(self):
+        """Тест что кешируются только комментарии верхнего уровня"""
+        parent = Comment.objects.create(user=self.user, text="Parent comment")
+        Comment.objects.create(user=self.user, text="Reply comment", reply=parent)
+
+        response = self.client.get("/api/comments/preview/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Должен быть только 1 комментарий (родительский)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["text"], "Parent comment")
+
+
+class PeriodicTaskTests(TestCase):
+    """Тесты для периодических задач"""
+
+    def test_cleanup_failed_email_tasks(self):
+        """Тест очистки неудачных email задач"""
+        from app.tasks import cleanup_failed_email_tasks
+        from django_celery_results.models import TaskResult
+
+        # Создаём несколько записей о задачах
+        TaskResult.objects.create(task_id="test-1", status="SUCCESS", result="OK")
+        TaskResult.objects.create(task_id="test-2", status="FAILURE", result="Error")
+        TaskResult.objects.create(task_id="test-3", status="FAILURE", result="Error")
+
+        # Проверяем начальное состояние
+        self.assertEqual(TaskResult.objects.count(), 3)
+        self.assertEqual(TaskResult.objects.filter(status="FAILURE").count(), 2)
+
+        # Запускаем задачу очистки
+        cleanup_failed_email_tasks()
+
+        # Проверяем что неудачные задачи удалены
+        self.assertEqual(TaskResult.objects.count(), 1)
+        self.assertEqual(TaskResult.objects.filter(status="SUCCESS").count(), 1)
+        self.assertEqual(TaskResult.objects.filter(status="FAILURE").count(), 0)

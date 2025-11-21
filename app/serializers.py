@@ -11,6 +11,12 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
+class CommentPreviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["id", "text", "created_at"]
+
+
 class CommentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     replies = serializers.SerializerMethodField()
