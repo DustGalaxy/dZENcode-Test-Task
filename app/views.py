@@ -1,8 +1,13 @@
 from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from django.core.cache import cache
+
 from .models import Comment
-from .serializers import CommentSerializer, CommentCreateSerializer
+from .serializers import CommentSerializer, CommentCreateSerializer, UserSerializer
+from app.serializers import CommentPreviewSerializer
 
 
 class CommentListCreateAPIView(generics.ListCreateAPIView):
@@ -38,3 +43,47 @@ class CommentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ["PUT", "PATCH", "POST"]:
             return CommentCreateSerializer
         return CommentSerializer
+
+
+class CommentPreviewAPIView(generics.ListAPIView):
+    """
+    API view to list all top-level comments (no parent) with Redis caching.
+    GET: Returns all comments that are not replies
+    Cache TTL: 5 minutes
+    """
+
+    queryset = Comment.objects.filter(reply__isnull=True).order_by("-created_at")
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = CommentPreviewSerializer
+
+    def list(self, request, *args, **kwargs):
+        cache_key = "comment_preview_list"
+
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=300)
+        return response
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def user_me(request):
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def comment_text_preview(request):
+    serializer = CommentCreateSerializer(
+        data=request.data, context={"request": request}
+    )
+
+    if serializer.is_valid():
+        return Response({"text": serializer.validated_data["text"]})
+
+    return Response(serializer.errors, status=400)
