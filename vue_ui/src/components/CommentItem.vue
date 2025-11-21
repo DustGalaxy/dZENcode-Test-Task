@@ -32,7 +32,6 @@ const toggleReplyForm = () => {
 
 const handleReplySuccess = () => {
   showReplyForm.value = false;
-  // Optionally trigger a refresh or let WebSocket handle it
 };
 </script>
 

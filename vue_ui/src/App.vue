@@ -15,7 +15,7 @@ onMounted(async () => {
   <div id="app">
     <Header />
 
-    <main class="bg-[#222222]">
+    <main class="bg-[#222222] text-white">
       <!-- RouterView отображает компоненты в зависимости от текущего route -->
       <RouterView />
     </main>

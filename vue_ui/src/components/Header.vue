@@ -9,7 +9,9 @@ const authStore = useAuthStore();
   <header
     class="bg-gray-800 text-white p-4 flex justify-between items-center relative"
   >
-    <h1 class="text-2xl font-bold">Comments App</h1>
+    <RouterLink to="/"
+      ><h1 class="text-2xl font-bold">Comments App</h1></RouterLink
+    >
 
     <div v-if="authStore.isAuthenticated" class="flex items-center gap-4">
       <span>Welcome, {{ authStore.user?.username }}!</span>
