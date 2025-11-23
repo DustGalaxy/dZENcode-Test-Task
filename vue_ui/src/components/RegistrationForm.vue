@@ -8,15 +8,19 @@ const router = useRouter();
 
 const username = ref("");
 const password = ref("");
+const password2 = ref("");
+const email = ref("");
 const errorMessage = ref("");
 
 async function handleLogin() {
   errorMessage.value = "";
 
   try {
-    await authStore.login({
+    await authStore.registration({
       username: username.value,
       password: password.value,
+      password2: password2.value,
+      email: "",
     });
 
     router.push("/");
@@ -49,12 +53,40 @@ async function handleLogin() {
       </div>
 
       <div class="mb-4">
+        <label for="email" class="block mb-2 font-medium text-gray-200"
+          >Email:</label
+        >
+        <input
+          id="email"
+          v-model="email"
+          type="email"
+          required
+          :disabled="authStore.isLoading"
+          class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div class="mb-4">
         <label for="password" class="block mb-2 font-medium text-gray-200"
           >Password:</label
         >
         <input
           id="password"
           v-model="password"
+          type="password"
+          required
+          :disabled="authStore.isLoading"
+          class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div class="mb-4">
+        <label for="password2" class="block mb-2 font-medium text-gray-200"
+          >Repeat password:</label
+        >
+        <input
+          id="password2"
+          v-model="password2"
           type="password"
           required
           :disabled="authStore.isLoading"

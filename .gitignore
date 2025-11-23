@@ -1,6 +1,7 @@
 migrations/
 static/
-
+node_modules/
+.vite/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

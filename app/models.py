@@ -19,3 +19,17 @@ class Comment(models.Model):
         blank=True,
         related_name="replies",
     )
+
+    def get_root_comment(self):
+        current = self
+        while current.reply is not None:
+            current = current.reply
+        return current
+
+
+class CommentAttachment(models.Model):
+    comment = models.ForeignKey(
+        Comment, on_delete=models.CASCADE, related_name="attachments"
+    )
+    file = models.URLField()
+    media_type = models.CharField(max_length=50)

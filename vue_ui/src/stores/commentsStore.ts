@@ -8,6 +8,12 @@ export interface User {
   email: string
 }
 
+export interface Attachment {
+  id: number
+  file: string
+  media_type: string
+}
+
 export interface Comment {
   id: number
   user: User
@@ -16,6 +22,7 @@ export interface Comment {
   updated_at: string
   reply: number | null
   replies?: Comment[]
+  attachments?: Attachment[]
 }
 
 export const useCommentsStore = defineStore('comments', () => {
@@ -76,19 +83,28 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // Create a new comment or reply
-  const addComment = async (text: string, replyTo: number | null = null) => {
+  const addComment = async (text: string, replyTo: number | null = null, files: File[] = []) => {
     loading.value = true
     error.value = null
     try {
-      const payload: any = { text }
+      const formData = new FormData()
+      formData.append('text', text)
       if (replyTo) {
-        payload.reply = replyTo
+        formData.append('reply', replyTo.toString())
+      }
+      files.forEach((file) => {
+        formData.append('attachments', file)
+      })
+
+      const headers: HeadersInit = {}
+      if (authStore.accessToken) {
+        headers['Authorization'] = `Bearer ${authStore.accessToken}`
       }
 
       const response = await fetch('http://127.0.0.1:8000/api/comments/', {
         method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(payload),
+        headers: headers,
+        body: formData,
       })
 
       if (!response.ok) {

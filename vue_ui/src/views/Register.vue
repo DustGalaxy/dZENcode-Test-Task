@@ -1,11 +1,10 @@
 <script setup lang="ts">
-// Register form component will be created later
+import RegistrationForm from "../components/RegistrationForm.vue";
 </script>
 
 <template>
   <div class="register-page">
-    <h2 class="text-3xl font-bold mb-6">Register</h2>
-    <p>Registration form coming soon...</p>
+    <RegistrationForm />
   </div>
 </template>
 
