@@ -6,7 +6,11 @@ import bleach
 from rest_framework import serializers
 import cloudinary.uploader
 
-from .models import Comment, User, CommentAttachment
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+from app.models import Comment, User, CommentAttachment
+from app.tasks import send_reply_notification_email
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -168,14 +172,46 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             ext = os.path.splitext(file.name)[1].lower()
             media_type = "image" if ext in [".jpg", ".jpeg", ".png", ".gif"] else "file"
 
-            cloudinary_file = cloudinary.uploader.upload(
-                file,
-                resource_type="auto",
-            )
-            file_url = cloudinary_file["secure_url"]
+            try:
+                cloudinary_file = cloudinary.uploader.upload(
+                    file,
+                    resource_type="auto",
+                )
+                file_url = cloudinary_file["secure_url"]
+            except cloudinary.exceptions.Error as e:
+                raise serializers.ValidationError(e.message)
 
             CommentAttachment.objects.create(
                 comment=comment, file=file_url, media_type=media_type
             )
+
         comment.attachments.set(CommentAttachment.objects.filter(comment=comment))
+
+        if comment.reply:
+            self._send_reply_notification(comment)
+
         return comment
+
+    def _send_reply_notification(self, comment):
+        """
+        Send WebSocket notification and email when a reply is created.
+        """
+        root_comment = comment.get_root_comment()
+        channel_layer = get_channel_layer()
+        serialized_reply = CommentSerializer(comment).data
+
+        # Attachments are already included in serialized_reply via get_attachments method
+        # But let's ensure we are consistent with previous logic if needed.
+        # The previous logic manually constructed the attachments list.
+        # CommentSerializer.get_attachments does exactly that.
+
+        # print("serializers, new_reply: ", serialized_reply)
+        group_name = f"comment_{root_comment.id}"
+        async_to_sync(channel_layer.group_send)(
+            group_name, {"type": "new_reply", "reply": serialized_reply}
+        )
+
+        send_reply_notification_email.delay(
+            user_email=root_comment.user.email,
+            comment_text_short=serialized_reply["text"][:100],
+        )

@@ -20,6 +20,12 @@ class Comment(models.Model):
         related_name="replies",
     )
 
+    def get_root_comment(self):
+        current = self
+        while current.reply is not None:
+            current = current.reply
+        return current
+
 
 class CommentAttachment(models.Model):
     comment = models.ForeignKey(
