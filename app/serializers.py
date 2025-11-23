@@ -114,18 +114,18 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attachments = attrs.get("attachments", [])
         for i, file in enumerate(attachments):
-            # Check size (100KB)
-            if file.size > 100 * 1024:
-                raise serializers.ValidationError(
-                    f"File {file.name} is too big. Max 100KB."
-                )
-
-            # Check extension
             ext = os.path.splitext(file.name)[1].lower()
             if ext == ".txt":
+                if file.size > 100 * 1024:
+                    raise serializers.ValidationError(
+                        f"File {file.name} is too big. Max TXT file size is 100KB."
+                    )
                 continue
             elif ext in [".jpg", ".jpeg", ".png", ".gif"]:
-                # Process image
+                if file.size > 5 * 1024 * 1024:
+                    raise serializers.ValidationError(
+                        f"File {file.name} is too big. Max JPG, PNG, GIF file size is 5MB."
+                    )
                 file = self._process_image(file, ext)
                 attachments[i] = file
             else:
@@ -140,12 +140,10 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         try:
             image = Image.open(file)
 
-            # Check dimensions
             if image.width > 320 or image.height > 240:
                 image.thumbnail((320, 240))
 
                 output = io.BytesIO()
-                # Determine format from extension or original format
                 img_format = (
                     image.format if image.format else ext.replace(".", "").upper()
                 )
@@ -193,19 +191,10 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         return comment
 
     def _send_reply_notification(self, comment):
-        """
-        Send WebSocket notification and email when a reply is created.
-        """
         root_comment = comment.get_root_comment()
         channel_layer = get_channel_layer()
         serialized_reply = CommentSerializer(comment).data
 
-        # Attachments are already included in serialized_reply via get_attachments method
-        # But let's ensure we are consistent with previous logic if needed.
-        # The previous logic manually constructed the attachments list.
-        # CommentSerializer.get_attachments does exactly that.
-
-        # print("serializers, new_reply: ", serialized_reply)
         group_name = f"comment_{root_comment.id}"
         async_to_sync(channel_layer.group_send)(
             group_name, {"type": "new_reply", "reply": serialized_reply}

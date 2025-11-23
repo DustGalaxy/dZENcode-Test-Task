@@ -73,9 +73,10 @@ const handleFileChange = (event: Event) => {
     const newFiles = Array.from(target.files);
     const allowedTypes = ["text/plain", "image/jpeg", "image/png", "image/gif"];
 
-    // Filter by size (100KB) and type
     const validFiles = newFiles.filter((file) => {
-      const isSizeValid = file.size <= 100 * 1024;
+      const isSizeValid = file.name.endsWith(".txt")
+        ? file.size <= 100 * 1024
+        : file.size <= 5 * 1024 * 1024;
       const isTypeValid =
         allowedTypes.includes(file.type) || file.name.endsWith(".txt");
       return isSizeValid && isTypeValid;
@@ -83,7 +84,7 @@ const handleFileChange = (event: Event) => {
 
     if (validFiles.length !== newFiles.length) {
       alert(
-        "Some files were skipped. Max size: 100KB. Allowed types: TXT, JPG, PNG, GIF."
+        "Some files were skipped. Max TXT size: 100KB. Max JPG, PNG, GIF size: 5MB. Allowed types: TXT, JPG, PNG, GIF."
       );
     }
 
