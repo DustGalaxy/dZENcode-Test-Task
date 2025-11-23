@@ -33,6 +33,16 @@ const toggleReplyForm = () => {
 const handleReplySuccess = () => {
   showReplyForm.value = false;
 };
+
+const selectedImage = ref<string | null>(null);
+
+const openImage = (url: string) => {
+  selectedImage.value = url;
+};
+
+const closeImage = () => {
+  selectedImage.value = null;
+};
 </script>
 
 <template>
@@ -67,6 +77,49 @@ const handleReplySuccess = () => {
         class="prose dark:prose-invert max-w-none mb-3 text-white comment-content"
         v-html="comment.text"
       ></div>
+
+      <!-- Attachments -->
+      <div
+        v-if="comment.attachments && comment.attachments.length > 0"
+        class="mt-2 mb-3 flex flex-wrap gap-2"
+        @click.stop
+      >
+        <div v-for="attachment in comment.attachments" :key="attachment.id">
+          <div
+            v-if="attachment.media_type === 'image'"
+            @click="openImage(attachment.file)"
+            class="block w-24 h-24 rounded overflow-hidden border border-gray-200 dark:border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            <img
+              :src="attachment.file"
+              class="w-full h-full object-cover"
+              alt="Attachment"
+            />
+          </div>
+          <a
+            v-else
+            :href="attachment.file"
+            target="_blank"
+            class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded text-sm text-indigo-600 dark:text-indigo-400 hover:underline border border-gray-200 dark:border-gray-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span>Download File</span>
+          </a>
+        </div>
+      </div>
 
       <div class="flex items-center justify-between mt-2">
         <div
@@ -115,6 +168,38 @@ const handleReplySuccess = () => {
         :key="reply.id"
         :comment="reply"
         :is-detail="true"
+      />
+    </div>
+
+    <!-- Image Modal -->
+    <div
+      v-if="selectedImage"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+      @click="closeImage"
+    >
+      <button
+        @click="closeImage"
+        class="absolute top-4 right-4 text-white hover:text-gray-300"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-8 w-8"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+      <img
+        :src="selectedImage"
+        class="max-w-full max-h-full object-contain"
+        @click.stop
       />
     </div>
   </div>

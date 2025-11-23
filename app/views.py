@@ -10,6 +10,9 @@ from .serializers import CommentSerializer, CommentCreateSerializer, UserSeriali
 from app.serializers import CommentPreviewSerializer
 
 
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
+
 class CommentListCreateAPIView(generics.ListCreateAPIView):
     """
     API view to list all top-level comments (no parent) and create new comments.
@@ -20,6 +23,7 @@ class CommentListCreateAPIView(generics.ListCreateAPIView):
     queryset = Comment.objects.filter(reply__isnull=True).order_by("-created_at")
     authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_serializer_class(self):
         if self.request.method == "POST":

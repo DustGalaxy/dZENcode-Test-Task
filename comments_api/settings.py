@@ -14,6 +14,10 @@ from datetime import timedelta
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -126,6 +130,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+#
+# ------------------------------------------
+#
+
+
 PRODUCTION = False
 
 INSTALLED_APPS += [
@@ -137,6 +146,7 @@ INSTALLED_APPS += [
     "django_celery_results",
     "django_celery_beat",
     "corsheaders",
+    "cloudinary",
 ]
 
 MIDDLEWARE += [
@@ -149,11 +159,18 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 AUTH_USER_MODEL = "app.User"
+ASGI_APPLICATION = "comments_api.asgi.application"
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 if not PRODUCTION:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -170,14 +187,13 @@ else:
     EMAIL_HOST_USER = "your-email@example.com"
     EMAIL_HOST_PASSWORD = "your-email-password"
 
-# Cache Configuration
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {},
         "KEY_PREFIX": "comments_api",
-        "TIMEOUT": 300,  # 5 minutes default
+        "TIMEOUT": 300,
     }
 }
 
@@ -197,7 +213,6 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_LIFETIME_LATE_USER": timedelta(days=30),
 }
 
-ASGI_APPLICATION = "comments_api.asgi.application"
 
 if PRODUCTION:
     CHANNEL_LAYERS = {
