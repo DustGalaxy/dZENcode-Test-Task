@@ -10,10 +10,10 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User, LoginCredentials, AuthState } from '../types/auth'
+import type { User, LoginCredentials, RegistrationCredentials, AuthState } from '../types/auth'
 import { storage } from '../utils/storage'
 import { isTokenExpired, getUserIdFromToken } from '../utils/jwt'
-import { login as apiLogin, refreshAccessToken, getCurrentUser } from '../api/auth'
+import { login as apiLogin, register as apiRegister, refreshAccessToken, getCurrentUser } from '../api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -124,6 +124,34 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function registration(credentials: RegistrationCredentials): Promise<void> {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const user = await apiRegister(credentials)
+
+      const tokens = await apiLogin({
+        username: credentials.username,
+        password: credentials.password,
+      })
+
+      accessToken.value = tokens.access
+      refreshToken.value = tokens.refresh
+
+      storage.setAccessToken(tokens.access)
+      storage.setRefreshToken(tokens.refresh)
+      storage.setUser(user)
+
+      console.log('Registration successful:', user)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Registration failed'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   /**
    * Обновление access токена с помощью refresh токена
    */
@@ -214,6 +242,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Actions
     initialize,
     login,
+    registration,
     logout,
     refreshTokens,
     getValidAccessToken,

@@ -2,15 +2,24 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from django.core.cache import cache
 
-from .models import Comment
-from .serializers import CommentSerializer, CommentCreateSerializer, UserSerializer
-from app.serializers import CommentPreviewSerializer
+from app.models import Comment
+from app.serializers import (
+    CommentSerializer,
+    CommentCreateSerializer,
+    UserSerializer,
+    CommentPreviewSerializer,
+    RegistrationSerializer,
+)
 
 
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+class RegistrationView(generics.CreateAPIView):
+    serializer_class = RegistrationSerializer
+    authentication_classes = []
+    permission_classes = []
 
 
 class CommentListCreateAPIView(generics.ListCreateAPIView):

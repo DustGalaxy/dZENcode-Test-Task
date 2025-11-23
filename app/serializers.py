@@ -4,6 +4,7 @@ from PIL import Image
 from django.core.files.base import ContentFile
 import bleach
 from rest_framework import serializers
+import cloudinary.uploader
 
 from .models import Comment, User, CommentAttachment
 
@@ -13,6 +14,30 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email"]
         read_only_fields = ["id"]
+
+
+class RegistrationSerializer(serializers.ModelSerializer):
+    password2 = serializers.CharField(style={"input_type": "password"}, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "password", "password2"]
+        extra_kwargs = {"password": {"write_only": True}}
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["password2"]:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+        )
+        return user
 
 
 class CommentPreviewSerializer(serializers.ModelSerializer):
@@ -143,8 +168,11 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             ext = os.path.splitext(file.name)[1].lower()
             media_type = "image" if ext in [".jpg", ".jpeg", ".png", ".gif"] else "file"
 
+            # Upload to Cloudinary explicitly
+            upload_result = cloudinary.uploader.upload(file, resource_type="auto")
+            print(upload_result)
             CommentAttachment.objects.create(
-                comment=comment, file=file, media_type=media_type
+                comment=comment, file=upload_result["secure_url"], media_type=media_type
             )
-
+        comment.attachments.set(CommentAttachment.objects.filter(comment=comment))
         return comment

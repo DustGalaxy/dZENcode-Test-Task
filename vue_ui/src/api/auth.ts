@@ -2,7 +2,7 @@
  * API методы для аутентификации
  */
 
-import type { LoginCredentials, TokenResponse, User } from '../types/auth'
+import type { LoginCredentials, TokenResponse, RegistrationCredentials, User } from '../types/auth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -61,16 +61,8 @@ export async function getCurrentUser(accessToken: string): Promise<User> {
   return response.json()
 }
 
-/**
- * Регистрация нового пользователя (если есть такой endpoint)
- */
-export async function register(userData: {
-  username: string
-  email: string
-  password: string
-  home_page?: string
-}): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/api/register/`, {
+export async function register(userData: RegistrationCredentials): Promise<User> {
+  const response = await fetch(`${API_BASE_URL}/api/user/register/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

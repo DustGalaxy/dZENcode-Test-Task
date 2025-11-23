@@ -11,6 +11,13 @@ export interface LoginCredentials {
   password: string
 }
 
+export interface RegistrationCredentials {
+  username: string
+  email: string
+  password: string
+  password2: string
+}
+
 export interface TokenResponse {
   access: string
   refresh: string
