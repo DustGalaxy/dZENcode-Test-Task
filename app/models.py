@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from cloudinary.models import CloudinaryField
 
 
 class User(AbstractUser):
@@ -19,3 +20,11 @@ class Comment(models.Model):
         blank=True,
         related_name="replies",
     )
+
+
+class CommentAttachment(models.Model):
+    comment = models.ForeignKey(
+        Comment, on_delete=models.CASCADE, related_name="attachments"
+    )
+    file = CloudinaryField(resource_type="auto")
+    media_type = models.CharField(max_length=50)

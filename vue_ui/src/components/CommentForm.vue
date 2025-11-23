@@ -17,6 +17,8 @@ const error = ref("");
 const previewHtml = ref("");
 const showPreview = ref(false);
 const isPreviewLoading = ref(false);
+const files = ref<File[]>([]);
+const fileInput = ref<HTMLInputElement | null>(null);
 
 const editor = useEditor({
   content: "",
@@ -61,6 +63,51 @@ const setLink = () => {
     .run();
 };
 
+const triggerFileInput = () => {
+  fileInput.value?.click();
+};
+
+const handleFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files) {
+    const newFiles = Array.from(target.files);
+    const allowedTypes = ["text/plain", "image/jpeg", "image/png", "image/gif"];
+
+    // Filter by size (100KB) and type
+    const validFiles = newFiles.filter((file) => {
+      const isSizeValid = file.size <= 100 * 1024;
+      const isTypeValid =
+        allowedTypes.includes(file.type) || file.name.endsWith(".txt");
+      return isSizeValid && isTypeValid;
+    });
+
+    if (validFiles.length !== newFiles.length) {
+      alert(
+        "Some files were skipped. Max size: 100KB. Allowed types: TXT, JPG, PNG, GIF."
+      );
+    }
+
+    if (files.value.length + validFiles.length > 5) {
+      alert("You can only attach up to 5 files.");
+      return;
+    }
+
+    files.value = [...files.value, ...validFiles];
+  }
+  if (target.value) target.value = "";
+};
+
+const getFilePreview = (file: File) => {
+  if (file.type.startsWith("image/")) {
+    return URL.createObjectURL(file);
+  }
+  return null;
+};
+
+const removeFile = (index: number) => {
+  files.value.splice(index, 1);
+};
+
 const fetchPreview = async () => {
   if (!editor.value || editor.value.isEmpty) return;
 
@@ -99,8 +146,9 @@ const handleSubmit = async () => {
 
   try {
     const content = editor.value.getHTML();
-    await store.addComment(content, props.replyTo);
+    await store.addComment(content, props.replyTo, files.value);
     editor.value.commands.clearContent();
+    files.value = [];
     error.value = "";
     showPreview.value = false;
     previewHtml.value = "";
@@ -165,9 +213,81 @@ onBeforeUnmount(() => {
         >
           Link
         </button>
+        <div class="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+        <button
+          @click="triggerFileInput"
+          class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+          title="Attach File"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+            />
+          </svg>
+        </button>
+
+        <input
+          type="file"
+          ref="fileInput"
+          multiple
+          class="hidden"
+          accept="image/jpeg, image/png, image/gif, .txt"
+          @change="handleFileChange"
+        />
       </div>
 
       <editor-content :editor="editor" />
+
+      <!-- Selected Files -->
+      <div
+        v-if="files.length > 0"
+        class="p-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-wrap gap-2"
+      >
+        <div v-for="(file, index) in files" :key="index" class="relative group">
+          <div
+            v-if="getFilePreview(file)"
+            class="w-16 h-16 rounded overflow-hidden border border-gray-300 dark:border-gray-600"
+          >
+            <img
+              :src="getFilePreview(file)!"
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div
+            v-else
+            class="w-16 h-16 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs text-gray-500 text-center p-1 break-all"
+          >
+            {{ file.name.split(".").pop() }}
+          </div>
+
+          <button
+            @click="removeFile(index)"
+            class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 shadow-sm hover:bg-red-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-3 w-3"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="error" class="text-red-500 text-sm mb-2">{{ error }}</div>
