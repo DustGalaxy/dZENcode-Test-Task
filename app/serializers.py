@@ -111,8 +111,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 
         return cleaned_text
 
-    def validate(self, attrs):
-        attachments = attrs.get("attachments", [])
+    def validate_attachments(self, attachments):
         for i, file in enumerate(attachments):
             ext = os.path.splitext(file.name)[1].lower()
             if ext == ".txt":
@@ -133,8 +132,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
                     f"File {file.name} has invalid format. Only TXT, JPG, PNG, GIF allowed."
                 )
 
-        attrs["attachments"] = attachments
-        return attrs
+        return attachments
 
     def _process_image(self, file, ext):
         try:
@@ -156,7 +154,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
                 return ContentFile(output.read(), name=file.name)
 
             return file
-        except Exception as e:
+        except Exception:
             raise serializers.ValidationError(f"Invalid image file: {file.name}")
 
     def create(self, validated_data):
@@ -166,7 +164,6 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         comment = super().create(validated_data)
 
         for file in attachments_data:
-            # Determine media type based on extension since content_type might be generic for ContentFile
             ext = os.path.splitext(file.name)[1].lower()
             media_type = "image" if ext in [".jpg", ".jpeg", ".png", ".gif"] else "file"
 
@@ -176,8 +173,8 @@ class CommentCreateSerializer(serializers.ModelSerializer):
                     resource_type="auto",
                 )
                 file_url = cloudinary_file["secure_url"]
-            except cloudinary.exceptions.Error as e:
-                raise serializers.ValidationError(e.message)
+            except cloudinary.exceptions.Error:
+                raise serializers.ValidationError("Failed to upload file to Cloudinary")
 
             CommentAttachment.objects.create(
                 comment=comment, file=file_url, media_type=media_type

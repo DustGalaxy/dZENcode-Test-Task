@@ -5,7 +5,6 @@ import Header from "./components/Header.vue";
 
 const authStore = useAuthStore();
 
-// Инициализация при загрузке приложения
 onMounted(async () => {
   await authStore.initialize();
 });
@@ -14,9 +13,7 @@ onMounted(async () => {
 <template>
   <div id="app">
     <Header />
-
     <main class="bg-[#222222] text-white">
-      <!-- RouterView отображает компоненты в зависимости от текущего route -->
       <RouterView />
     </main>
   </div>
