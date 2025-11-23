@@ -27,6 +27,10 @@ export interface Comment {
 
 export const useCommentsStore = defineStore('comments', () => {
   const comments = ref<Comment[]>([])
+  const totalComments = ref(0)
+  const currentPage = ref(1)
+  const currentSort = ref('-created_at')
+  const currentSearch = ref('')
   const currentComment = ref<Comment | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -46,16 +50,31 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // Fetch top-level comments
-  const fetchComments = async (page = 1) => {
+  const fetchComments = async (page = 1, ordering?: string, search?: string) => {
     loading.value = true
     error.value = null
+    
+    if (ordering !== undefined) currentSort.value = ordering
+    if (search !== undefined) currentSearch.value = search
+    currentPage.value = page
+
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/comments/?page=${page}`, {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        ordering: currentSort.value,
+      })
+      
+      if (currentSearch.value) {
+        queryParams.append('search', currentSearch.value)
+      }
+
+      const response = await fetch(`http://127.0.0.1:8000/api/comments/?${queryParams.toString()}`, {
         headers: getHeaders(),
       })
       if (!response.ok) throw new Error('Failed to fetch comments')
       const data = await response.json()
-      comments.value = data
+      comments.value = data.results
+      totalComments.value = data.count
       
     } catch (err: any) {
       error.value = err.message
@@ -209,6 +228,10 @@ export const useCommentsStore = defineStore('comments', () => {
 
   return {
     comments,
+    totalComments,
+    currentPage,
+    currentSort,
+    currentSearch,
     currentComment,
     loading,
     error,

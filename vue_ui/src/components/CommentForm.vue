@@ -171,7 +171,11 @@ onBeforeUnmount(() => {
     class="text-white bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
   >
     <h3 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-      {{ replyTo ? "Leave a Reply" : "Post a Comment" }}
+      {{
+        replyTo
+          ? "Leave a Reply as - " + authStore.user?.username
+          : "Post a Comment as - " + authStore.user?.username
+      }}
     </h3>
 
     <div

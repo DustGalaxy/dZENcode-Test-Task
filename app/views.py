@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, filters
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -14,6 +14,7 @@ from app.serializers import (
     CommentPreviewSerializer,
     RegistrationSerializer,
 )
+from app.utils import StandardResultsSetPagination
 
 
 class RegistrationView(generics.CreateAPIView):
@@ -33,6 +34,11 @@ class CommentListCreateAPIView(generics.ListCreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = ["created_at", "user__username", "user__email"]
+    ordering = ["-created_at"]
+    search_fields = ["user__username", "user__email"]
 
     def get_serializer_class(self):
         if self.request.method == "POST":

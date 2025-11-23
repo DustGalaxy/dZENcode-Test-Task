@@ -1,10 +1,28 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useCommentsStore } from "../stores/commentsStore";
 import CommentItem from "../components/CommentItem.vue";
 import CommentForm from "../components/CommentForm.vue";
+import { useAuthStore } from "../stores/authStore";
 
 const store = useCommentsStore();
+const authStore = useAuthStore();
+
+const localSearch = ref("");
+const localSort = ref("-created_at");
+
+const totalPages = computed(() => Math.ceil(store.totalComments / 25));
+
+const applyFilters = () => {
+  store.fetchComments(1, localSort.value, localSearch.value);
+};
+
+const changePage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    store.fetchComments(page, localSort.value, localSearch.value);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
 
 onMounted(() => {
   store.fetchComments();
@@ -39,7 +57,48 @@ onMounted(() => {
       </button>
     </div>
 
-    <div class="mb-8">
+    <!-- Filters and Sort -->
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-8">
+      <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Search User</label
+          >
+          <input
+            v-model="localSearch"
+            type="text"
+            placeholder="Search by name or email..."
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm px-4 py-2 border"
+            @keyup.enter="applyFilters"
+          />
+        </div>
+        <div class="w-full md:w-48">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Sort By</label
+          >
+          <select
+            v-model="localSort"
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm px-4 py-2 border"
+            @change="applyFilters"
+          >
+            <option value="-created_at">Newest First</option>
+            <option value="created_at">Oldest First</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button
+            @click="applyFilters"
+            class="w-full md:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-8" v-if="authStore.isAuthenticated">
       <CommentForm />
     </div>
 
@@ -84,11 +143,35 @@ onMounted(() => {
       />
 
       <div
-        v-if="store.comments.length === 0"
+        v-if="store.comments && store.comments.length === 0"
         class="text-center py-12 text-gray-500 dark:text-gray-400"
       >
         No comments yet. Be the first to share your thoughts!
       </div>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      v-if="totalPages > 0"
+      class="mt-8 flex justify-between items-center space-x-4"
+    >
+      <button
+        @click="changePage(store.currentPage - 1)"
+        :disabled="store.currentPage === 1"
+        class="w-24 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+      >
+        Previous
+      </button>
+      <span class="text-sm text-gray-700 dark:text-gray-300">
+        Page {{ store.currentPage }} of {{ totalPages }}
+      </span>
+      <button
+        @click="changePage(store.currentPage + 1)"
+        :disabled="store.currentPage === totalPages"
+        class="w-24 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+      >
+        Next
+      </button>
     </div>
   </div>
 </template>
