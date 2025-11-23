@@ -22,9 +22,14 @@ export async function apiRequest<T>(
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
 
-  const requestHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...headers,
+  const requestHeaders = {
+    ...(headers as Record<string, string>),
+  }
+
+  // Only set Content-Type to application/json if body is NOT FormData
+  // and Content-Type is not already set
+  if (!(fetchOptions.body instanceof FormData) && !requestHeaders['Content-Type']) {
+    requestHeaders['Content-Type'] = 'application/json'
   }
 
   // Добавляем токен аутентификации, если требуется

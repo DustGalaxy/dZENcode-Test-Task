@@ -2,6 +2,7 @@
 import { ref, onBeforeUnmount } from "vue";
 import { useCommentsStore } from "../stores/commentsStore";
 import { useAuthStore } from "../stores/authStore";
+import { commentsApi } from "../api/comments";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -116,21 +117,7 @@ const fetchPreview = async () => {
   showPreview.value = true;
   try {
     const rawText = editor.value.getHTML();
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/comments/preview-text/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authStore.accessToken}`,
-        },
-        body: JSON.stringify({ text: rawText }),
-      }
-    );
-
-    if (!response.ok) throw new Error("Preview failed");
-
-    const data = await response.json();
+    const data = await commentsApi.preview(rawText);
     previewHtml.value = data.text;
   } catch (e) {
     error.value = "Failed to load preview";

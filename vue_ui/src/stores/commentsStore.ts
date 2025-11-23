@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './authStore'
+import { commentsApi } from '../api/comments'
 
 export interface User {
   id: number
@@ -38,16 +39,7 @@ export const useCommentsStore = defineStore('comments', () => {
 
   const authStore = useAuthStore()
 
-  // Helper to get headers with token
-  const getHeaders = () => {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    }
-    if (authStore.accessToken) {
-      headers['Authorization'] = `Bearer ${authStore.accessToken}`
-    }
-    return headers
-  }
+
 
   // Fetch top-level comments
   const fetchComments = async (page = 1, ordering?: string, search?: string) => {
@@ -59,22 +51,13 @@ export const useCommentsStore = defineStore('comments', () => {
     currentPage.value = page
 
     try {
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
+      const response = await commentsApi.getAll({
+        page,
         ordering: currentSort.value,
+        search: currentSearch.value
       })
-      
-      if (currentSearch.value) {
-        queryParams.append('search', currentSearch.value)
-      }
-
-      const response = await fetch(`http://127.0.0.1:8000/api/comments/?${queryParams.toString()}`, {
-        headers: getHeaders(),
-      })
-      if (!response.ok) throw new Error('Failed to fetch comments')
-      const data = await response.json()
-      comments.value = data.results
-      totalComments.value = data.count
+      comments.value = response.results
+      totalComments.value = response.count
       
     } catch (err: any) {
       error.value = err.message
@@ -88,11 +71,7 @@ export const useCommentsStore = defineStore('comments', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/comments/${id}/`, {
-        headers: getHeaders(),
-      })
-      if (!response.ok) throw new Error('Failed to fetch comment detail')
-      const data = await response.json()
+      const data = await commentsApi.getById(id)
       currentComment.value = data
     } catch (err: any) {
       error.value = err.message
@@ -115,23 +94,7 @@ export const useCommentsStore = defineStore('comments', () => {
         formData.append('attachments', file)
       })
 
-      const headers: HeadersInit = {}
-      if (authStore.accessToken) {
-        headers['Authorization'] = `Bearer ${authStore.accessToken}`
-      }
-
-      const response = await fetch('http://127.0.0.1:8000/api/comments/', {
-        method: 'POST',
-        headers: headers,
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errData = await response.json()
-        throw new Error(JSON.stringify(errData))
-      }
-      
-      const newComment = await response.json()
+      const newComment = await commentsApi.create(formData)
       
       // If it's a top-level comment, add to list
       if (!replyTo) {

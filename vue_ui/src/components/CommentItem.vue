@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import type { Comment } from "../stores/commentsStore";
 import { useAuthStore } from "../stores/authStore";
 import CommentForm from "./CommentForm.vue";
+import { filesApi } from "../api/files";
 
 interface Props {
   comment: Comment;
@@ -51,12 +52,7 @@ const openText = async (url: string) => {
   isTextLoading.value = true;
   selectedText.value = ""; // Clear previous
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to load text file");
-
-    // Get blob to handle encoding
-    const blob = await response.blob();
-    const text = await blob.text(); // blob.text() automatically handles UTF-8
+    const text = await filesApi.getTextFile(url);
     selectedText.value = text;
   } catch (e) {
     console.error(e);
