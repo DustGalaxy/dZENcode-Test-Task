@@ -67,7 +67,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_attachments(self, obj):
         return [
-            {"id": a.id, "file": a.file.url, "media_type": a.media_type}
+            {"id": a.id, "file": a.file, "media_type": a.media_type}
             for a in obj.attachments.all()
         ]
 
@@ -168,11 +168,14 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             ext = os.path.splitext(file.name)[1].lower()
             media_type = "image" if ext in [".jpg", ".jpeg", ".png", ".gif"] else "file"
 
-            # Upload to Cloudinary explicitly
-            upload_result = cloudinary.uploader.upload(file, resource_type="auto")
-            print(upload_result)
+            cloudinary_file = cloudinary.uploader.upload(
+                file,
+                resource_type="auto",
+            )
+            file_url = cloudinary_file["secure_url"]
+
             CommentAttachment.objects.create(
-                comment=comment, file=upload_result["secure_url"], media_type=media_type
+                comment=comment, file=file_url, media_type=media_type
             )
         comment.attachments.set(CommentAttachment.objects.filter(comment=comment))
         return comment
