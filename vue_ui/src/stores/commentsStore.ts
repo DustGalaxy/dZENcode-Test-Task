@@ -2,29 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './authStore'
 import { commentsApi } from '../api/comments'
-
-export interface User {
-  id: number
-  username: string
-  email: string
-}
-
-export interface Attachment {
-  id: number
-  file: string
-  media_type: string
-}
-
-export interface Comment {
-  id: number
-  user: User
-  text: string
-  created_at: string
-  updated_at: string
-  reply: number | null
-  replies?: Comment[]
-  attachments?: Attachment[]
-}
+import type { Comment } from '../types/comments'
 
 export const useCommentsStore = defineStore('comments', () => {
   const comments = ref<Comment[]>([])
@@ -93,7 +71,7 @@ export const useCommentsStore = defineStore('comments', () => {
       files.forEach((file) => {
         formData.append('attachments', file)
       })
-
+      
       const newComment = await commentsApi.create(formData)
       
       // If it's a top-level comment, add to list

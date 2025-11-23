@@ -86,14 +86,23 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     ALLOWED_TAGS = ["a", "code", "i", "strong", "p", "br", "em", "b"]
     ALLOWED_ATTRIBUTES = {"a": ["href", "title"]}
 
+    user = UserSerializer(read_only=True)
     attachments = serializers.ListField(
         child=serializers.FileField(), write_only=True, required=False
     )
 
     class Meta:
         model = Comment
-        fields = ["id", "text", "reply", "created_at", "updated_at", "attachments"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "text",
+            "reply",
+            "user",
+            "created_at",
+            "updated_at",
+            "attachments",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "user"]
 
     def validate_text(self, value):
         cleaned_text = bleach.clean(

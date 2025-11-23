@@ -1,18 +1,5 @@
 import { api } from '../utils/api'
-import type { Comment } from '../stores/commentsStore'
-
-export interface CommentsResponse {
-  count: number
-  next: string | null
-  previous: string | null
-  results: Comment[]
-}
-
-export interface CommentParams {
-  page?: number
-  ordering?: string
-  search?: string
-}
+import type { Comment, CommentsResponse, CommentParams } from '../types/api'
 
 export const commentsApi = {
   getAll: (params: CommentParams = {}) => {

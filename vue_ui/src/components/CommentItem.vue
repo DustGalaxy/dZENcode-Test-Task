@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import type { Comment } from "../stores/commentsStore";
+import type { Comment } from "../types/comments";
 import { useAuthStore } from "../stores/authStore";
 import CommentForm from "./CommentForm.vue";
 import { filesApi } from "../api/files";
