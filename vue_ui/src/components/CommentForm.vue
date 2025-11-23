@@ -234,11 +234,13 @@ onBeforeUnmount(() => {
             />
           </svg>
         </button>
+
         <input
           type="file"
           ref="fileInput"
           multiple
           class="hidden"
+          accept="image/jpeg, image/png, image/gif, .txt"
           @change="handleFileChange"
         />
       </div>
