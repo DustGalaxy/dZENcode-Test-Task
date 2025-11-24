@@ -1,7 +1,9 @@
 import io
 import os
+import requests
 from PIL import Image
 from django.core.files.base import ContentFile
+from django.conf import settings
 import bleach
 from rest_framework import serializers
 import cloudinary.uploader
@@ -90,6 +92,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     attachments = serializers.ListField(
         child=serializers.FileField(), write_only=True, required=False
     )
+    recaptcha_token = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = Comment
@@ -101,6 +104,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "attachments",
+            "recaptcha_token",
         ]
         read_only_fields = ["id", "created_at", "updated_at", "user"]
 
@@ -119,6 +123,35 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         )
 
         return cleaned_text
+
+    def validate_recaptcha_token(self, value):
+        """Validate reCAPTCHA token with Google's API"""
+        if not settings.RECAPTCHA_PRIVATE_KEY:
+            raise serializers.ValidationError(
+                "reCAPTCHA is not configured on the server"
+            )
+
+        # Send verification request to Google
+        response = requests.post(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data={
+                "secret": settings.RECAPTCHA_PRIVATE_KEY,
+                "response": value,
+            },
+            timeout=10,
+        )
+
+        result = response.json()
+
+        if not result.get("success", False):
+            error_codes = result.get("error-codes", [])
+            if "timeout-or-duplicate" in error_codes:
+                raise serializers.ValidationError(
+                    "CAPTCHA has expired. Please try again."
+                )
+            raise serializers.ValidationError("Invalid CAPTCHA. Please try again.")
+
+        return value
 
     def validate_attachments(self, attachments):
         for i, file in enumerate(attachments):
@@ -168,6 +201,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         attachments_data = validated_data.pop("attachments", [])
+        validated_data.pop("recaptcha_token", None)
         user = self.context["request"].user
         validated_data["user"] = user
         comment = super().create(validated_data)

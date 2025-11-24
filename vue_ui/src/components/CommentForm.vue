@@ -6,6 +6,7 @@ import { commentsApi } from "../api/comments";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import ReCaptcha from "./ReCaptcha.vue";
 
 const props = defineProps<{
   replyTo?: number;
@@ -20,6 +21,8 @@ const showPreview = ref(false);
 const isPreviewLoading = ref(false);
 const files = ref<File[]>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
+const recaptchaToken = ref("");
+const recaptchaRef = ref<InstanceType<typeof ReCaptcha> | null>(null);
 
 const editor = useEditor({
   content: "",
@@ -132,20 +135,47 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (!recaptchaToken.value) {
+    error.value = "Please complete the CAPTCHA verification";
+    return;
+  }
+
   try {
     const content = editor.value.getHTML();
-    await store.addComment(content, props.replyTo, files.value);
+    await store.addComment(
+      content,
+      props.replyTo,
+      files.value,
+      recaptchaToken.value
+    );
     editor.value.commands.clearContent();
     files.value = [];
     error.value = "";
     showPreview.value = false;
     previewHtml.value = "";
+    recaptchaToken.value = "";
     if (props.onSuccess) {
       props.onSuccess();
     }
   } catch (e: any) {
-    error.value = "Failed to post comment";
+    error.value = e.message || "Failed to post comment";
+    recaptchaToken.value = "";
   }
+};
+
+const onCaptchaVerify = (token: string) => {
+  recaptchaToken.value = token;
+  error.value = "";
+};
+
+const onCaptchaExpired = () => {
+  recaptchaToken.value = "";
+  error.value = "CAPTCHA expired. Please verify again.";
+};
+
+const onCaptchaError = () => {
+  recaptchaToken.value = "";
+  error.value = "CAPTCHA error. Please try again.";
 };
 
 onBeforeUnmount(() => {
@@ -283,6 +313,14 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="error" class="text-red-500 text-sm mb-2">{{ error }}</div>
+
+    <!-- CAPTCHA -->
+    <ReCaptcha
+      ref="recaptchaRef"
+      @verify="onCaptchaVerify"
+      @expired="onCaptchaExpired"
+      @error="onCaptchaError"
+    />
 
     <!-- Preview Area -->
     <div

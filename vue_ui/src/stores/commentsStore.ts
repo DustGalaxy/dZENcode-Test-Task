@@ -59,12 +59,13 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // Create a new comment or reply
-  const addComment = async (text: string, replyTo: number | null = null, files: File[] = []) => {
+  const addComment = async (text: string, replyTo: number | null = null, files: File[] = [], recaptchaToken: string) => {
     loading.value = true
     error.value = null
     try {
       const formData = new FormData()
       formData.append('text', text)
+      formData.append('recaptcha_token', recaptchaToken)
       if (replyTo) {
         formData.append('reply', replyTo.toString())
       }
