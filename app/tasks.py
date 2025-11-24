@@ -26,7 +26,7 @@ def send_reply_notification_email(*args, **kwargs):
     email = EmailMultiAlternatives(
         subject="Новый ответ на ваш комментарий",
         body=text_content,
-        from_email=settings.DEFAULT_FROM_EMAIL,
+        from_email=settings.EMAIL_HOST_USER,
         to=[user_email],
     )
     email.attach_alternative(html_content, "text/html")
