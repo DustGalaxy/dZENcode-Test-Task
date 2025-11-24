@@ -129,7 +129,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const user = await apiRegister(credentials)
+      const new_user = await apiRegister(credentials)
 
       const tokens = await apiLogin({
         username: credentials.username,
@@ -138,12 +138,12 @@ export const useAuthStore = defineStore('auth', () => {
 
       accessToken.value = tokens.access
       refreshToken.value = tokens.refresh
-
+      user.value = new_user
       storage.setAccessToken(tokens.access)
       storage.setRefreshToken(tokens.refresh)
-      storage.setUser(user)
+      storage.setUser(user.value)
 
-      console.log('Registration successful:', user)
+      console.log('Registration successful:', user.value)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Registration failed'
       throw err

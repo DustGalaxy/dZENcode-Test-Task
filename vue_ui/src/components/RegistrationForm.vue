@@ -20,7 +20,7 @@ async function handleLogin() {
       username: username.value,
       password: password.value,
       password2: password2.value,
-      email: "",
+      email: email.value,
     });
 
     router.push("/");

@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
-    pass
+    email = models.EmailField()
 
 
 class Comment(models.Model):

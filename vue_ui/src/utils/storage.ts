@@ -2,6 +2,8 @@
  * Утилиты для работы с перманентным хранилищем (localStorage)
  */
 
+import type { User } from "../types/auth"
+
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'auth_access_token',
   REFRESH_TOKEN: 'auth_refresh_token',
@@ -27,7 +29,7 @@ export const storage = {
   },
 
   // Данные пользователя
-  setUser(user: object): void {
+  setUser(user: User): void {
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user))
   },
 
