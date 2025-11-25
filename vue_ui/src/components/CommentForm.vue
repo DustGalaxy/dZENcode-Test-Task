@@ -7,6 +7,7 @@ import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import ReCaptcha from "./ReCaptcha.vue";
+import { type RecaptchaExposed } from "./ReCaptcha.vue";
 
 const props = defineProps<{
   replyTo?: number;
@@ -22,7 +23,7 @@ const isPreviewLoading = ref(false);
 const files = ref<File[]>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
 const recaptchaToken = ref("");
-const recaptchaRef = ref<InstanceType<typeof ReCaptcha> | null>(null);
+const recaptchaRef = ref<RecaptchaExposed | null>(null);
 
 const editor = useEditor({
   content: "",
@@ -157,6 +158,7 @@ const handleSubmit = async () => {
     if (props.onSuccess) {
       props.onSuccess();
     }
+    recaptchaRef.value?.reset();
   } catch (e: any) {
     error.value = e.message || "Failed to post comment";
     recaptchaToken.value = "";

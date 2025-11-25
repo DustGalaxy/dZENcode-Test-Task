@@ -8,18 +8,18 @@ export const commentsApi = {
     if (params.ordering) queryParams.append('ordering', params.ordering)
     if (params.search) queryParams.append('search', params.search)
 
-    return api.get<CommentsResponse>(`/api/comments/?${queryParams.toString()}`)
+    return api.get<CommentsResponse>(`/comments/?${queryParams.toString()}`)
   },
 
   getById: (id: number) => {
-    return api.get<Comment>(`/api/comments/${id}/`)
+    return api.get<Comment>(`/comments/${id}/`)
   },
 
   create: (formData: FormData) => {
-    return api.post<Comment>('/api/comments/', formData)
+    return api.post<Comment>('/comments/', formData)
   },
 
   preview: (text: string) => {
-    return api.post<{ text: string }>('/api/comments/preview-text/', { text })
+    return api.post<{ text: string }>('/comments/preview-text/', { text })
   }
 }

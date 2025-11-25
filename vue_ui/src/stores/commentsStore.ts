@@ -4,6 +4,8 @@ import { useAuthStore } from './authStore'
 import { commentsApi } from '../api/comments'
 import type { Comment } from '../types/comments'
 
+const API_HOST = import.meta.env.VITE_API_HOST
+
 export const useCommentsStore = defineStore('comments', () => {
   const comments = ref<Comment[]>([])
   const totalComments = ref(0)
@@ -97,7 +99,7 @@ export const useCommentsStore = defineStore('comments', () => {
       socket.value.close()
     }
 
-    let wsUrl = `ws://127.0.0.1:8000/ws/comments/${commentId}/`
+    let wsUrl = `ws://${API_HOST}/ws/comments/${commentId}/`
     if (authStore.accessToken) {
         wsUrl += `?token=${authStore.accessToken}`
     }

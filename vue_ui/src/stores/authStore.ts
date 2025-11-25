@@ -1,16 +1,6 @@
-/**
- * Pinia Store для управления аутентификацией
- * 
- * Флоу аутентификации:
- * 1. Инициализация: проверка localStorage на наличие сохраненных токенов
- * 2. Логин: отправка credentials -> получение токенов -> получение данных пользователя -> сохранение
- * 3. Автоматическое обновление токена при истечении
- * 4. Logout: очистка store и localStorage
- */
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User, LoginCredentials, RegistrationCredentials, AuthState } from '../types/auth'
+import type { User, LoginCredentials, RegistrationCredentials } from '../types/auth'
 import { storage } from '../utils/storage'
 import { isTokenExpired, getUserIdFromToken } from '../utils/jwt'
 import { login as apiLogin, register as apiRegister, refreshAccessToken, getCurrentUser } from '../api/auth'
@@ -27,50 +17,37 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!user.value && !!accessToken.value)
 
   // Actions
-
-  /**
-   * Инициализация store - проверка перманентного хранилища
-   * Вызывается при старте приложения
-   */
   async function initialize(): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      // Шаг 1: Поиск в перманентном хранилище
       const savedAccessToken = storage.getAccessToken()
       const savedRefreshToken = storage.getRefreshToken()
       const savedUser = storage.getUser<User>()
 
       if (!savedAccessToken || !savedRefreshToken) {
-        // Нет сохраненных токенов
         return
       }
 
-      // Проверяем, не истек ли access token
       if (isTokenExpired(savedAccessToken)) {
-        // Пытаемся обновить токен
         await refreshTokens(savedRefreshToken)
       } else {
-        // Токен валидный, восстанавливаем состояние
         accessToken.value = savedAccessToken
         refreshToken.value = savedRefreshToken
         user.value = savedUser
 
-        // Опционально: обновляем данные пользователя с сервера
         if (savedUser) {
           try {
             user.value = await getCurrentUser(savedAccessToken)
             storage.setUser(user.value)
           } catch (err) {
-            // Если не удалось получить данные, используем сохраненные
             console.warn('Failed to refresh user data:', err)
           }
         }
       }
     } catch (err) {
       console.error('Failed to initialize auth:', err)
-      // Очищаем невалидные данные
       await logout()
     } finally {
       isLoading.value = false
@@ -85,32 +62,26 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      // Шаг 2: Логин через username и password
-      // Шаг 3: Получение ответа сервера в виде токенов
       const tokens = await apiLogin(credentials)
 
       accessToken.value = tokens.access
       refreshToken.value = tokens.refresh
 
-      // Шаг 4: Получение данных о пользователе
       try {
         user.value = await getCurrentUser(tokens.access)
       } catch (err) {
-        // Если endpoint /api/user/me/ не существует, создаем базовый объект пользователя
-        // из данных токена
         const userId = getUserIdFromToken(tokens.access)
         if (userId) {
           user.value = {
             id: userId,
             username: credentials.username,
-            email: '', // Будет заполнено при создании endpoint
+            email: user.value?.email || '',
           }
         } else {
           throw new Error('Failed to get user data from token')
         }
       }
 
-      // Шаг 5: Запись в useAuthStore (уже сделано выше) и в перманентное хранилище
       storage.setAccessToken(tokens.access)
       storage.setRefreshToken(tokens.refresh)
       storage.setUser(user.value)
@@ -166,7 +137,6 @@ export const useAuthStore = defineStore('auth', () => {
       const tokens = await refreshAccessToken(tokenToUse)
 
       accessToken.value = tokens.access
-      // Некоторые backend'ы возвращают новый refresh token
       if (tokens.refresh) {
         refreshToken.value = tokens.refresh
         storage.setRefreshToken(tokens.refresh)
@@ -177,7 +147,6 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('Token refreshed successfully')
     } catch (err) {
       console.error('Failed to refresh token:', err)
-      // Если не удалось обновить токен, разлогиниваем пользователя
       await logout()
       throw err
     }
@@ -187,15 +156,11 @@ export const useAuthStore = defineStore('auth', () => {
    * Logout пользователя
    */
   async function logout(): Promise<void> {
-    // Очистка store
     user.value = null
     accessToken.value = null
     refreshToken.value = null
     error.value = null
-
-    // Очистка перманентного хранилища
     storage.clearAuth()
-
     console.log('Logout successful')
   }
 
@@ -208,7 +173,6 @@ export const useAuthStore = defineStore('auth', () => {
       throw new Error('No access token available')
     }
 
-    // Проверяем, не истек ли токен (с буфером 60 секунд)
     if (isTokenExpired(accessToken.value, 60)) {
       await refreshTokens()
     }

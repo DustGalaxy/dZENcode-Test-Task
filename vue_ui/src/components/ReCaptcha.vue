@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import vueRecaptcha from "vue3-recaptcha2";
+import VueRecaptcha from "vue3-recaptcha2";
 import { RECAPTCHA_SITE_KEY } from "../config/captcha";
+
+export interface RecaptchaExposed {
+  reset: () => void;
+}
 
 const emit = defineEmits<{
   verify: [token: string];
@@ -11,26 +15,31 @@ const emit = defineEmits<{
 
 const loadingTimeout = ref(30000);
 const showRecaptcha = ref(true);
-const recaptchaRef = ref<InstanceType<typeof vueRecaptcha> | null>(null);
+const recaptchaRef = ref<InstanceType<typeof VueRecaptcha> | null>(null);
 
 const onVerify = (response: string) => {
   emit("verify", response);
-  recaptchaRef.reset();
 };
 
 const onExpired = () => {
   emit("expired");
-  recaptchaRef.reset();
 };
 
 const onError = () => {
   emit("error");
 };
+
+defineExpose({
+  reset: () => {
+    recaptchaRef.value?.reset();
+  },
+});
 </script>
 
 <template>
   <div class="recaptcha-wrapper">
     <vue-recaptcha
+      ref="recaptchaRef"
       v-show="showRecaptcha"
       :sitekey="RECAPTCHA_SITE_KEY"
       size="normal"
@@ -41,7 +50,6 @@ const onError = () => {
       @expire="onExpired"
       @fail="onError"
       @error="onError"
-      :ref="recaptchaRef"
     >
     </vue-recaptcha>
   </div>

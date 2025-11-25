@@ -7,6 +7,7 @@ from .views import (
     RegistrationView,
     user_me,
     comment_text_preview,
+    health_check,
 )
 
 urlpatterns = [
@@ -16,4 +17,5 @@ urlpatterns = [
     path("comments/preview-text/", comment_text_preview, name="comment-text-preview"),
     path("user/me/", user_me, name="user-me"),
     path("user/register/", RegistrationView.as_view(), name="user-register"),
+    path("health/", health_check, name="health_check"),
 ]

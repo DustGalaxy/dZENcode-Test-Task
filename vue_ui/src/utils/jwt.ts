@@ -1,7 +1,3 @@
-/**
- * Утилиты для работы с JWT токенами
- */
-
 interface JWTPayload {
   user_id: number
   exp: number
@@ -42,7 +38,7 @@ export function isTokenExpired(token: string, bufferSeconds = 60): boolean {
   const payload = decodeJWT(token)
   if (!payload || !payload.exp) return true
 
-  const expirationTime = payload.exp * 1000 // конвертируем в миллисекунды
+  const expirationTime = payload.exp * 1000
   const currentTime = Date.now()
   const bufferTime = bufferSeconds * 1000
 

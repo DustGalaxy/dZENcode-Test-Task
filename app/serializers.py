@@ -226,11 +226,11 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         comment.attachments.set(CommentAttachment.objects.filter(comment=comment))
 
         if comment.reply:
-            self._send_reply_notification(comment)
+            self._send_reply_notification(comment, user)
 
         return comment
 
-    def _send_reply_notification(self, comment):
+    def _send_reply_notification(self, comment, user):
         root_comment = comment.get_root_comment()
         channel_layer = get_channel_layer()
         serialized_reply = CommentSerializer(comment).data
@@ -240,7 +240,8 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             group_name, {"type": "new_reply", "reply": serialized_reply}
         )
 
-        send_reply_notification_email.delay(
-            user_email=root_comment.user.email,
-            comment_text_short=serialized_reply["text"][:100],
-        )
+        if user != root_comment.user:
+            send_reply_notification_email.delay(
+                user_email=root_comment.user.email,
+                comment_text_short=serialized_reply["text"][:200],
+            )

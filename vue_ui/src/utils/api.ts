@@ -5,7 +5,7 @@
 
 import { useAuthStore } from '../stores/authStore'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 interface RequestOptions extends RequestInit {
   requiresAuth?: boolean
@@ -20,7 +20,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { requiresAuth = true, headers = {}, ...fetchOptions } = options
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
+  const url = `${API_BASE_URL}${endpoint}`
 
   const requestHeaders = {
     ...(headers as Record<string, string>),

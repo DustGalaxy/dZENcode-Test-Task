@@ -4,13 +4,13 @@
 
 import type { LoginCredentials, TokenResponse, RegistrationCredentials, User } from '../types/auth'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 /**
  * Логин пользователя
  */
 export async function login(credentials: LoginCredentials): Promise<TokenResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/token/`, {
+  const response = await fetch(`${API_BASE_URL}/token/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ export async function login(credentials: LoginCredentials): Promise<TokenRespons
  * Обновление access токена с помощью refresh токена
  */
 export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
+  const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenRes
 }
 
 export async function getCurrentUser(accessToken: string): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/api/user/me/`, {
+  const response = await fetch(`${API_BASE_URL}/user/me/`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -62,7 +62,7 @@ export async function getCurrentUser(accessToken: string): Promise<User> {
 }
 
 export async function register(userData: RegistrationCredentials): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/api/user/register/`, {
+  const response = await fetch(`${API_BASE_URL}/user/register/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

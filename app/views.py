@@ -106,3 +106,8 @@ def comment_text_preview(request):
         return Response({"text": serializer.validated_data["text"]})
 
     return Response(serializer.errors, status=400)
+
+
+@api_view(["GET"])
+def health_check(request):
+    return Response({"status": "ok"})
