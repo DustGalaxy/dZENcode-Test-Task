@@ -27,8 +27,9 @@ RUN uv pip install --no-cache -r pyproject.toml
 # Copy application code
 COPY . .
 
-# Create non-root user
+# Create non-root user and directories
 RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/static /app/media && \
     chown -R appuser:appuser /app
 
 # Make entrypoint executable
