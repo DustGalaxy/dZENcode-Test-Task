@@ -90,7 +90,7 @@ services:
       redis:
         condition: service_healthy
       backend:
-        condition: service_healthy
+        condition: service_started
     networks:
       - app_network
     restart: unless-stopped
@@ -116,7 +116,7 @@ services:
       redis:
         condition: service_healthy
       backend:
-        condition: service_healthy
+        condition: service_started
     networks:
       - app_network
     restart: unless-stopped

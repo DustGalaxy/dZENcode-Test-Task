@@ -1,4 +1,4 @@
-migrations/
+
 static/
 node_modules/
 .vite/
