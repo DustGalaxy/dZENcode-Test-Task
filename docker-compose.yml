@@ -51,8 +51,8 @@ services:
       - REDIS_CACHE_URL=redis://redis:6379/1
       - REDIS_HOST=redis
     volumes:
-      - ./static:/app/static
-      - ./media:/app/media
+      - static_files:/app/static
+      - media_files:/app/media
     ports:
       - "8000:8000"
     healthcheck:
@@ -146,3 +146,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  static_files:
+  media_files:
