@@ -36,6 +36,7 @@
    ```env
    # Django
    SECRET_KEY=your-secret-key
+   PRODUCTION=False
    DEBUG=True
    ALLOWED_HOSTS=localhost,127.0.0.1
    
@@ -57,8 +58,8 @@
    VITE_RECAPTCHA_SITE_KEY=your-site-key
    
    # Frontend
-   VITE_API_BASE_URL=http://localhost:8000
-   VITE_API_HOST=localhost:8000
+   VITE_API_BASE_URL=/api
+   VITE_API_HOST=http://localhost:8000
    ```
 
 3. **Запустите приложение:**
