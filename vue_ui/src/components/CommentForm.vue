@@ -121,7 +121,7 @@ const fetchPreview = async () => {
   showPreview.value = true;
   try {
     const rawText = editor.value.getHTML();
-    const data = await commentsApi.preview(rawText);
+    const data = await commentsApi.preview(rawText, recaptchaToken.value);
     previewHtml.value = data.text;
   } catch (e) {
     error.value = "Failed to load preview";

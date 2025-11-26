@@ -19,7 +19,7 @@ export const commentsApi = {
     return api.post<Comment>('/comments/', formData)
   },
 
-  preview: (text: string) => {
-    return api.post<{ text: string }>('/comments/preview-text/', { text })
+  preview: (text: string, recaptchaToken: string) => {
+    return api.post<{ text: string }>('/comments/preview-text/', { text, recaptchaToken })
   }
 }
