@@ -20,6 +20,6 @@ export const commentsApi = {
   },
 
   preview: (text: string, recaptchaToken: string) => {
-    return api.post<{ text: string }>('/comments/preview-text/', { text, recaptchaToken })
+    return api.post<{ text: string, recaptcha_token: string }>('/comments/preview-text/', { text, recaptcha_token: recaptchaToken })
   }
 }
