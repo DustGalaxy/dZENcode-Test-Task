@@ -284,8 +284,8 @@ ws.onmessage = (event) => {
     "VERSION": "1.0.0",
 }
 
-LOG_DIR = Path(os.environ.get("DJANGO_LOG_DIR", "/logs"))
-LOG_DIR.mkdir(parents=True, exist_ok=True)  # Создаст директорию, если ее нет
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOGGING = {
     "version": 1,
