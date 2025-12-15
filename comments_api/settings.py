@@ -283,3 +283,69 @@ ws.onmessage = (event) => {
 """,
     "VERSION": "1.0.0",
 }
+
+LOG_DIR = Path(os.environ.get("DJANGO_LOG_DIR", "/logs"))
+LOG_DIR.mkdir(parents=True, exist_ok=True)  # Создаст директорию, если ее нет
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    # --- 1. FORMATTERS (Форматы) ---
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {module} {process:d} {thread:d} | {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{levelname}] {asctime} | {message}",
+            "style": "{",
+        },
+    },
+    # --- 2. HANDLERS (Обработчики: Куда писать) ---
+    "handlers": {
+        # Хэндлер для вывода в консоль (используется Gunicorn/Uvicorn)
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        # Хэндлер для записи в файл с ротацией и сжатием
+        "file_rotating": {
+            "level": "INFO",
+            # Используем RotatingFileHandler для автоматической ротации
+            "class": "logging.handlers.RotatingFileHandler",
+            # Путь к файлу логов
+            "filename": LOG_DIR / "general.log",
+            "formatter": "verbose",
+            # --- Настройки Ротации и Сжатия ---
+            # Максимальный размер лог-файла: 10 МБ (10 * 1024 * 1024 байт)
+            "maxBytes": 10 * 1024 * 1024,
+            # Количество старых файлов, которые нужно хранить (например, 5 старых + текущий)
+            "backupCount": 5,
+            # Активация сжатия (архивации) старых файлов (e.g., general.log.1 станет general.log.1.gz)
+            "encoding": "utf8",
+            "delay": True,  # Задержка открытия файла до первого сообщения
+            "compress": True, 
+        },
+    },
+    # --- 3. LOGGERS (Логгеры: Что логировать) ---
+    "loggers": {
+        # Общий логгер Django (запросы, ошибки, предупреждения)
+        "django": {
+            "handlers": ["console", "file_rotating"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        # Логгер для ошибок базы данных
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        # Логгер верхнего уровня (для вашего кода и всего, что не поймано выше)
+        "": {
+            "handlers": ["console", "file_rotating"],
+            "level": "INFO",
+        },
+    },
+}
